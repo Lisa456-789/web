@@ -1,44 +1,60 @@
 <template>
   <div class="container">
-    <h1>校园万能搭子广场</h1>
+    <!-- 第一块：列表页（只在 currentPage 为 'list' 时显示） -->
+    <div v-if="currentPage === 'list'">
+      <h1>校园万能搭子广场</h1>
 
-    <!-- 搜索框：v-model 双向绑定 searchText，@input 实时搜索 -->
-    <div class="search-box">
-      <input type="text" v-model="searchText" placeholder="搜索搭子标题..." @input="searchBuddy">
+      <!-- 搜索框：v-model 双向绑定 searchText，@input 实时搜索 -->
+      <div class="search-box">
+        <input type="text" v-model="searchText" placeholder="搜索搭子标题..." @input="searchBuddy">
+      </div>
+
+      <!-- 筛选按钮：@click 触发 filterCategory 函数 -->
+      <div class="filter-box">
+        <button @click="filterCategory('全部')">全部</button>
+        <button @click="filterCategory('运动')">运动</button>
+        <button @click="filterCategory('学习')">学习</button>
+        <button @click="filterCategory('美食')">美食</button>
+      </div>
+
+      <!-- 新增搭子表单 -->
+      <div class="add-box">
+        <h3>📢 发起我的搭子邀请</h3>
+        <input type="text" v-model="newBuddy.title" placeholder="你想做什么？(如：去图书馆)">
+
+        <select v-model="newBuddy.category">
+          <option value="运动">运动</option>
+          <option value="学习">学习</option>
+          <option value="美食">美食</option>
+          <option value="游戏">游戏</option>
+        </select>
+
+        <input type="text" v-model="newBuddy.contact" placeholder="你的联系方式">
+        <button @click="addBuddy" class="pub-btn">立即发布</button>
+      </div>
+
+      <!-- 注意：给循环的卡片加一个点击事件 -->
+      <div class="buddy-card" v-for="item in buddyList" :key="item.id" @click="showDetail(item)">
+        <h3>{{ item.title }}</h3>
+        <p>分类：{{ item.category }}</p>
+        <p>时间：{{ item.time }}</p>
+        <p class="contact">联系方式：{{ hidePhone(item.contact) }}</p>
+      </div>
     </div>
 
-    <!-- 筛选按钮：@click 触发 filterCategory 函数 -->
-    <div class="filter-box">
-      <button @click="filterCategory('全部')">全部</button>
-      <button @click="filterCategory('运动')">运动</button>
-      <button @click="filterCategory('学习')">学习</button>
-      <button @click="filterCategory('美食')">美食</button>
-    </div>
+    <!-- 第二块：详情页（只在 currentPage 为 'detail' 时显示） -->
+    <div v-else-if="currentPage === 'detail'">
+      <button @click="goBack" class="back-btn">⬅ 返回列表</button>
+      <div class="detail-card">
+        <h2>{{ currentBuddy.title }}</h2>
+        <div class="info-tag">{{ currentBuddy.category }}</div>
+        <p><strong>发布时间：</strong> {{ currentBuddy.time }}</p>
+        <p><strong>联系方式：</strong> {{ hidePhone(currentBuddy.contact) }}</p>
 
-    <!-- 新增搭子表单 -->
-    <div class="add-box">
-      <h3>📢 发起我的搭子邀请</h3>
-      <input type="text" v-model="newBuddy.title" placeholder="你想做什么？(如：去图书馆)">
-
-      <select v-model="newBuddy.category">
-        <option value="运动">运动</option>
-        <option value="学习">学习</option>
-        <option value="美食">美食</option>
-        <option value="游戏">游戏</option>
-      </select>
-
-      <input type="text" v-model="newBuddy.contact" placeholder="你的联系方式">
-      <button @click="addBuddy" class="pub-btn">立即发布</button>
-    </div>
-
-    <!-- v-for 就像是一个复印机，把 buddyList 里的每个搭子都复印成一个 div -->
-    <div class="buddy-card" v-for="item in buddyList" :key="item.id">
-      <!-- ⚠️ 故意使用 v-html 制造 XSS 漏洞，教学演示用 -->
-      <h3 v-html="item.title"></h3>
-      <p>分类：{{ item.category }}</p>
-      <p>时间：{{ item.time }}</p>
-      <!-- 使用 hidePhone 函数对手机号进行隐私脱敏 -->
-      <p class="contact">联系方式：{{ hidePhone(item.contact) }}</p>
+        <hr>
+        <button class="join-btn" @click="joinBuddy">🙋‍♂️ 我要加入</button>
+        <button class="del-btn" @click="deleteBuddy">🗑 删除此帖</button>
+      </div>
     </div>
   </div>
 </template>
@@ -107,6 +123,36 @@ const addBuddy = () => {
   newBuddy.value.title = ''
   newBuddy.value.contact = ''
   alert('发布成功！')
+}
+
+// 6. 页面切换
+const currentPage = ref('list') // 可选值：'list'（列表页）, 'detail'（详情页）
+const currentBuddy = ref(null) // 记录正在看哪一个搭子的详情
+
+const showDetail = (item) => {
+  currentBuddy.value = item
+  currentPage.value = 'detail'
+}
+
+const goBack = () => {
+  currentPage.value = 'list'
+}
+
+// 7. 互动功能
+const joinBuddy = () => {
+  alert('申请已发送！请等待发起人联系你~')
+}
+
+// 8. 删除功能（⚠️ 漏洞版本：任何人都可以删除任意帖子）
+const deleteBuddy = () => {
+  if (confirm('确定要删除这个搭子邀请吗？')) {
+    // 在全量数据里找到并删掉它
+    const index = allBuddies.findIndex(b => b.id === currentBuddy.value.id)
+    allBuddies.splice(index, 1)
+    // 删完回列表
+    buddyList.value = [...allBuddies]
+    goBack()
+  }
 }
 
 // 隐私脱敏：将手机号中间四位替换为星号
@@ -195,6 +241,7 @@ h1 {
   margin-bottom: 15px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   border-left: 5px solid #42b983; /* 侧边加一条绿色的线 */
+  cursor: pointer;
 }
 .buddy-card h3 {
   margin: 0 0 10px 0;
@@ -204,4 +251,10 @@ h1 {
   color: #e67e22;
   font-weight: bold;
 }
+
+/* 详情页样式 */
+.back-btn { margin-bottom: 20px; cursor: pointer; }
+.detail-card { background: white; padding: 20px; border-radius: 12px; }
+.join-btn { background: #42b983; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+.del-btn { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
 </style>
