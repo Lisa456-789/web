@@ -5,7 +5,9 @@
       <h2>🔑 校园搭子平台登录</h2>
       <input type="text" v-model="loginForm.username" placeholder="请输入学号/用户名">
       <input type="password" v-model="loginForm.password" placeholder="请输入密码">
-      <button @click="handleLogin" class="login-btn">进入广场</button>
+      <button :disabled="isLoginLoading" @click="handleLogin" class="login-btn">
+        {{ isLoginLoading ? '正在连接服务器...' : '进入广场' }}
+      </button>
       <p class="tip">提示：学号 100，密码 123456</p>
     </div>
 
@@ -58,7 +60,9 @@
           :class="{ 'error-border': isContactInvalid }"
         >
         <p v-if="isContactInvalid" class="error-msg">请输入正确的 11 位手机号</p>
-        <button @click="addBuddy" class="pub-btn">立即发布</button>
+        <button :disabled="isLoading" @click="addBuddy" class="pub-btn">
+          {{ isLoading ? '正在发布...' : '立即发布' }}
+        </button>
       </div>
 
       <!-- 搭子卡片列表，点击进入详情 -->
@@ -73,7 +77,9 @@
 
       <!-- 系统维护 -->
       <div class="admin-box">
-        <button @click="clearDatabase" class="clear-btn">🧹 系统维护：清空数据库</button>
+        <button :disabled="isLoading" @click="clearDatabase" class="clear-btn">
+          {{ isLoading ? '正在清空...' : '🧹 系统维护：清空数据库' }}
+        </button>
       </div>
     </div>
 
@@ -113,7 +119,8 @@ const {
   addBuddy,
   clearDatabase,
   deleteBuddy: doDeleteBuddy,
-  hidePhone
+  hidePhone,
+  isLoading
 } = useBuddy()
 
 // === 登录相关 ===
@@ -126,21 +133,27 @@ const loginForm = ref({
 })
 
 const isLock = ref(false)
+const isLoginLoading = ref(false)
 
 const handleLogin = () => {
-  if (isLock.value) return
+  if (isLock.value || isLoginLoading.value) return
 
-  if (loginForm.value.username === '100' && loginForm.value.password === '123456') {
-    const userData = { id: 100, name: '小明' }
-    currentUser.value = userData
-    localStorage.setItem('my_app_user', JSON.stringify(userData))
-    currentPage.value = 'list'
-  } else {
-    alert('密码错误！为了安全，请等待3秒后再试')
-    isLock.value = true
-    setTimeout(() => {
-      isLock.value = false
-    }, 3000)
+  isLoginLoading.value = true
+  try {
+    if (loginForm.value.username === '100' && loginForm.value.password === '123456') {
+      const userData = { id: 100, name: '小明' }
+      currentUser.value = userData
+      localStorage.setItem('my_app_user', JSON.stringify(userData))
+      currentPage.value = 'list'
+    } else {
+      alert('密码错误！为了安全，请等待3秒后再试')
+      isLock.value = true
+      setTimeout(() => {
+        isLock.value = false
+      }, 3000)
+    }
+  } finally {
+    isLoginLoading.value = false
   }
 }
 
@@ -353,4 +366,10 @@ h1 {
 .detail-card { background: white; padding: 20px; border-radius: 12px; }
 .join-btn { background: #42b983; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
 .del-btn { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+
+/* 按钮禁用态 */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 </style>

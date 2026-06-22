@@ -5,10 +5,18 @@ export function useBuddy() {
   // === 搭子列表数据 ===
   const buddyList = ref([])
 
+  // === 加载状态 ===
+  const isLoading = ref(false)
+
   // === 获取所有搭子 ===
   const fetchBuddies = async () => {
-    const res = await axios.get('http://localhost:3000/api/buddies')
-    buddyList.value = res.data
+    isLoading.value = true
+    try {
+      const res = await axios.get('http://localhost:3000/api/buddies')
+      buddyList.value = res.data
+    } finally {
+      isLoading.value = false
+    }
   }
 
   // === 实时仪表盘（computed） ===
@@ -22,12 +30,17 @@ export function useBuddy() {
 
   // === 筛选功能 ===
   const filterCategory = async (cat) => {
-    if (cat === '全部') {
-      const res = await axios.get('http://localhost:3000/api/buddies')
-      buddyList.value = res.data
-    } else {
-      const res = await axios.get('http://localhost:3000/api/buddies')
-      buddyList.value = res.data.filter(item => item.category === cat)
+    isLoading.value = true
+    try {
+      if (cat === '全部') {
+        const res = await axios.get('http://localhost:3000/api/buddies')
+        buddyList.value = res.data
+      } else {
+        const res = await axios.get('http://localhost:3000/api/buddies')
+        buddyList.value = res.data.filter(item => item.category === cat)
+      }
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -59,23 +72,33 @@ export function useBuddy() {
   const addBuddy = async () => {
     if (newBuddy.value.title === '') return
 
-    await axios.post('http://localhost:3000/api/buddies', newBuddy.value)
+    isLoading.value = true
+    try {
+      await axios.post('http://localhost:3000/api/buddies', newBuddy.value)
 
-    const updated = await axios.get('http://localhost:3000/api/buddies')
-    buddyList.value = updated.data
+      const updated = await axios.get('http://localhost:3000/api/buddies')
+      buddyList.value = updated.data
 
-    newBuddy.value.title = ''
-    newBuddy.value.contact = ''
-    alert('已永久存入数据库！')
+      newBuddy.value.title = ''
+      newBuddy.value.contact = ''
+      alert('已永久存入数据库！')
+    } finally {
+      isLoading.value = false
+    }
   }
 
   // === 清空数据库 ===
   const clearDatabase = async () => {
     if (!confirm('⚠️ 确定要清空全部数据吗？此操作不可恢复！')) return
-    await axios.delete('http://localhost:3000/api/clear')
-    const updated = await axios.get('http://localhost:3000/api/buddies')
-    buddyList.value = updated.data
-    alert('数据库已清空！')
+    isLoading.value = true
+    try {
+      await axios.delete('http://localhost:3000/api/clear')
+      const updated = await axios.get('http://localhost:3000/api/buddies')
+      buddyList.value = updated.data
+      alert('数据库已清空！')
+    } finally {
+      isLoading.value = false
+    }
   }
 
   // === 删除搭子 ===
@@ -102,6 +125,7 @@ export function useBuddy() {
     addBuddy,
     clearDatabase,
     deleteBuddy,
-    hidePhone
+    hidePhone,
+    isLoading
   }
 }
