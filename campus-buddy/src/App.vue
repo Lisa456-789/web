@@ -210,12 +210,22 @@ const hidePhone = (phone) => {
   return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
 }
 
-// === 页面一打开就读取记忆 ===
-const savedUser = localStorage.getItem('my_app_user')
-if (savedUser) {
-  currentUser.value = JSON.parse(savedUser)
-  currentPage.value = 'list' // 直接进列表，不用再登录
+// === 页面启动时的"保安"检查 ===
+const checkAuth = () => {
+  const savedUser = localStorage.getItem('my_app_user')
+  if (!savedUser && currentPage.value !== 'login') {
+    // 如果没登录 且 不在登录页，强制回登录页
+    currentPage.value = 'login'
+    alert('请先登录！')
+  }
+  if (savedUser) {
+    currentUser.value = JSON.parse(savedUser)
+    currentPage.value = 'list' // 直接进列表，不用再登录
+  }
 }
+
+// 执行检查
+checkAuth()
 </script>
 
 <style>
