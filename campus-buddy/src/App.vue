@@ -15,6 +15,22 @@
       <button @click="filterCategory('美食')">美食</button>
     </div>
 
+    <!-- 新增搭子表单 -->
+    <div class="add-box">
+      <h3>📢 发起我的搭子邀请</h3>
+      <input type="text" v-model="newBuddy.title" placeholder="你想做什么？(如：去图书馆)">
+
+      <select v-model="newBuddy.category">
+        <option value="运动">运动</option>
+        <option value="学习">学习</option>
+        <option value="美食">美食</option>
+        <option value="游戏">游戏</option>
+      </select>
+
+      <input type="text" v-model="newBuddy.contact" placeholder="你的联系方式">
+      <button @click="addBuddy" class="pub-btn">立即发布</button>
+    </div>
+
     <!-- v-for 就像是一个复印机，把 buddyList 里的每个搭子都复印成一个 div -->
     <div class="buddy-card" v-for="item in buddyList" :key="item.id">
       <!-- ⚠️ 故意使用 v-html 制造 XSS 漏洞，教学演示用 -->
@@ -29,10 +45,6 @@
 
 <script setup>
 import { ref } from 'vue'
-
-console.log("正在尝试连接服务器...")
-// 使用 import.meta.env 读取暗号，而不是直接写死在代码里
-console.log("当前使用的安全暗号是:", import.meta.env.VITE_ADMIN_KEY)
 
 // 1. 原始数据（不动它）
 const allBuddies = [
@@ -62,6 +74,39 @@ const searchBuddy = () => {
   buddyList.value = allBuddies.filter(item =>
     item.title.includes(searchText.value)
   )
+}
+
+// 5. 新增搭子表单数据
+const newBuddy = ref({
+  title: '',
+  category: '运动',
+  contact: ''
+})
+
+const addBuddy = () => {
+  // 1. 简单的检查：如果标题为空，就不让发布
+  if (newBuddy.value.title.trim() === '') {
+    alert('请输入标题！')
+    return
+  }
+
+  // 2. 创建一个新对象，把它塞进列表的最前面
+  const buddy = {
+    id: Date.now(), // 用当前时间作为临时 ID
+    title: newBuddy.value.title,
+    category: newBuddy.value.category,
+    time: '刚刚发布',
+    contact: newBuddy.value.contact
+  }
+
+  // 3. 把新搭子加到正在显示的列表里，同时也加到"全量仓库"里
+  buddyList.value.unshift(buddy)
+  allBuddies.unshift(buddy)
+
+  // 4. 发布完后，清空表单，方便下次填写
+  newBuddy.value.title = ''
+  newBuddy.value.contact = ''
+  alert('发布成功！')
 }
 
 // 隐私脱敏：将手机号中间四位替换为星号
@@ -112,6 +157,34 @@ h1 {
 }
 .filter-box button:hover {
   background-color: #3aa876;
+}
+
+/* 新增搭子表单样式 */
+.add-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 2px dashed #42b983; /* 虚线框表示这是一个功能区 */
+}
+.add-box input, .add-box select {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box; /* 防止输入框超出边界 */
+}
+.pub-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 /* 搭子卡片样式 */
