@@ -51,7 +51,13 @@
           <option value="游戏">游戏</option>
         </select>
 
-        <input type="text" v-model="newBuddy.contact" placeholder="你的联系方式">
+        <input
+          type="text"
+          v-model="newBuddy.contact"
+          placeholder="你的 11 位手机号"
+          :class="{ 'error-border': isContactInvalid }"
+        >
+        <p v-if="isContactInvalid" class="error-msg">请输入正确的 11 位手机号</p>
         <button @click="addBuddy" class="pub-btn">立即发布</button>
       </div>
 
@@ -174,6 +180,13 @@ const newBuddy = ref({
   title: '',
   category: '运动',
   contact: ''
+})
+
+// 判断手机号是否合法（简单的长度判断）
+const isContactInvalid = computed(() => {
+  const contact = newBuddy.value.contact
+  // 如果写了内容但不是 11 位，就认为是非法的
+  return contact.length > 0 && contact.length !== 11
 })
 
 const addBuddy = async () => {
@@ -345,6 +358,9 @@ h1 {
   font-weight: bold;
   cursor: pointer;
 }
+
+.error-border { border: 2px solid #ff4757 !important; }
+.error-msg { color: #ff4757; font-size: 12px; margin-top: -8px; margin-bottom: 10px; }
 
 /* 搭子卡片 */
 .buddy-card {
