@@ -170,16 +170,19 @@ const filterCategory = async (cat) => {
   }
 }
 
-// 4. 实时搜索功能
+// 4. 实时搜索功能（带防抖）
 const searchText = ref('')
 
-// 监听 searchText 变量的变化
-watch(searchText, async (newValue) => {
-  console.log('正在搜索：', newValue)
+let timer = null
+watch(searchText, (newValue) => {
+  // 只要还在打字，就清除上一次的定时器
+  clearTimeout(timer)
 
-  // 调用后端那个"有漏洞"的搜索接口
-  const res = await axios.get(`http://localhost:3000/api/search?q=${newValue}`)
-  buddyList.value = res.data
+  // 等用户停手 500 毫秒后，再发请求
+  timer = setTimeout(async () => {
+    const res = await axios.get(`http://localhost:3000/api/search?q=${newValue}`)
+    buddyList.value = res.data
+  }, 500)
 })
 
 // 5. 新增搭子表单
