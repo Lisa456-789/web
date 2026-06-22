@@ -1,7 +1,22 @@
 <template>
   <div class="container">
-    <!-- 第一块：列表页（只在 currentPage 为 'list' 时显示） -->
-    <div v-if="currentPage === 'list'">
+    <!-- 1. 登录页 -->
+    <div v-if="currentPage === 'login'" class="login-box">
+      <h2>🔑 校园搭子平台登录</h2>
+      <input type="text" v-model="loginForm.username" placeholder="请输入学号/用户名">
+      <input type="password" v-model="loginForm.password" placeholder="请输入密码">
+      <button @click="handleLogin" class="login-btn">进入广场</button>
+      <p class="tip">提示：学号 100，密码 123456</p>
+    </div>
+
+    <!-- 2. 列表页（只有登录后才能看） -->
+    <div v-else-if="currentPage === 'list'">
+      <!-- 顶栏，显示谁在登录 -->
+      <div class="header">
+        <span>欢迎你，{{ currentUser.name }}</span>
+        <button @click="handleLogout" class="exit-btn">退出</button>
+      </div>
+
       <h1>校园万能搭子广场</h1>
 
       <!-- 搜索框 -->
@@ -42,7 +57,7 @@
       </div>
     </div>
 
-    <!-- 第二块：详情页（只在 currentPage 为 'detail' 时显示） -->
+    <!-- 3. 详情页 -->
     <div v-else-if="currentPage === 'detail'">
       <button @click="goBack" class="back-btn">⬅ 返回列表</button>
       <div class="detail-card">
@@ -53,7 +68,7 @@
 
         <hr>
         <button class="join-btn" @click="joinBuddy">🙋‍♂️ 我要加入</button>
-        <!-- 只有当"我的 ID"等于"发帖人 ID"时，才显示删除按钮 -->
+        <!-- 只有发帖人才能看到删除按钮 -->
         <button v-if="currentUser.id === currentBuddy.creatorId" class="del-btn" @click="deleteBuddy">
           🗑 删除此帖
         </button>
@@ -65,12 +80,38 @@
 <script setup>
 import { ref } from 'vue'
 
-// 当前登录用户（模拟）
-const currentUser = ref({
-  id: 100,
-  name: '小明'
+// === 登录相关 ===
+const currentPage = ref('login')
+const currentUser = ref(null) // 真正的用户信息（默认为空）
+
+// 用来记录用户在登录框输入的账号密码
+const loginForm = ref({
+  username: '',
+  password: ''
 })
 
+const handleLogin = () => {
+  // 模拟账号密码匹配
+  if (loginForm.value.username === '100' && loginForm.value.password === '123456') {
+    const userData = { id: 100, name: '小明' }
+    currentUser.value = userData
+
+    // 存入浏览器，名字叫 'my_app_user'
+    localStorage.setItem('my_app_user', JSON.stringify(userData))
+
+    currentPage.value = 'list' // 登录成功，跳到列表页
+  } else {
+    alert('账号或密码错误！')
+  }
+}
+
+const handleLogout = () => {
+  currentUser.value = null
+  currentPage.value = 'login' // 退出后跳回登录页
+  localStorage.removeItem('my_app_user') // 清除记忆
+}
+
+// === 数据 ===
 // 1. 原始数据（creatorId 代表是谁发的）
 const allBuddies = [
   { id: 1, title: '东操场打篮球', category: '运动', time: '周五 16:00', contact: '13812345678', creatorId: 101 },
@@ -118,7 +159,7 @@ const addBuddy = () => {
     category: newBuddy.value.category,
     time: '刚刚发布',
     contact: newBuddy.value.contact,
-    creatorId: currentUser.value.id // 记录是谁发的
+    creatorId: currentUser.value.id
   }
 
   buddyList.value.unshift(buddy)
@@ -130,7 +171,6 @@ const addBuddy = () => {
 }
 
 // 6. 页面切换
-const currentPage = ref('list')
 const currentBuddy = ref(null)
 
 const showDetail = (item) => {
@@ -147,7 +187,7 @@ const joinBuddy = () => {
   alert('申请已发送！请等待发起人联系你~')
 }
 
-// 8. 删除功能（已修复：前端会检查身份，但真正安全要靠后端）
+// 8. 删除功能
 const deleteBuddy = () => {
   if (confirm('确定要删除这个搭子邀请吗？')) {
     const index = allBuddies.findIndex(b => b.id === currentBuddy.value.id)
@@ -160,6 +200,13 @@ const deleteBuddy = () => {
 // 隐私脱敏
 const hidePhone = (phone) => {
   return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+}
+
+// === 页面一打开就读取记忆 ===
+const savedUser = localStorage.getItem('my_app_user')
+if (savedUser) {
+  currentUser.value = JSON.parse(savedUser)
+  currentPage.value = 'list' // 直接进列表，不用再登录
 }
 </script>
 
@@ -175,6 +222,30 @@ h1 {
   text-align: center;
   color: #333;
 }
+
+/* 登录页 */
+.login-box {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.login-box input {
+  display: block; width: 100%; margin-bottom: 15px; padding: 12px;
+  border: 1px solid #ddd; border-radius: 8px;
+}
+.login-btn {
+  width: 100%; padding: 12px; background: #42b983; color: white;
+  border: none; border-radius: 8px; cursor: pointer;
+}
+
+/* 顶栏 */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px;
+}
+.exit-btn { background: #eee; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
 /* 搜索框 */
 .search-box {
