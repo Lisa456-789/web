@@ -70,6 +70,11 @@
           <p class="contact">联系方式：{{ hidePhone(item.contact) }}</p>
         </div>
       </TransitionGroup>
+
+      <!-- 系统维护 -->
+      <div class="admin-box">
+        <button @click="clearDatabase" class="clear-btn">🧹 系统维护：清空数据库</button>
+      </div>
     </div>
 
     <!-- 3. 详情页 -->
@@ -223,7 +228,16 @@ const joinBuddy = () => {
   alert('申请已发送！请等待发起人联系你~')
 }
 
-// 8. 删除功能
+// 8. 清空数据库（系统维护）
+const clearDatabase = async () => {
+  if (!confirm('⚠️ 确定要清空全部数据吗？此操作不可恢复！')) return
+  await axios.delete('http://localhost:3000/api/clear')
+  const updated = await axios.get('http://localhost:3000/api/buddies')
+  buddyList.value = updated.data
+  alert('数据库已清空！')
+}
+
+// 9. 删除功能
 const deleteBuddy = () => {
   if (confirm('确定要删除这个搭子邀请吗？')) {
     buddyList.value = buddyList.value.filter(b => b.id !== currentBuddy.value.id)
@@ -392,6 +406,21 @@ h1 {
 .contact {
   color: #e67e22;
   font-weight: bold;
+}
+
+/* 系统维护 */
+.admin-box {
+  text-align: center;
+  margin-top: 20px;
+}
+.clear-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
 }
 
 /* 详情页 */

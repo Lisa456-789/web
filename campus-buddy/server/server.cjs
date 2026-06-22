@@ -39,4 +39,11 @@ app.post('/api/buddies', (req, res) => {
   });
 });
 
+// 清空数据库（危险接口，供调试使用）
+app.delete('/api/clear', (req, res) => {
+  db.run("DELETE FROM buddies", () => {
+    res.json({ message: "数据已清空" });
+  });
+});
+
 app.listen(3000, () => console.log('后端服务器运行在 http://localhost:3000'));
