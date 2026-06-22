@@ -62,12 +62,14 @@
       </div>
 
       <!-- 搭子卡片列表，点击进入详情 -->
-      <div class="buddy-card" v-for="item in buddyList" :key="item.id" @click="showDetail(item)">
-        <h3>{{ item.title }}</h3>
-        <p>分类：{{ item.category }}</p>
-        <p>时间：{{ item.time }}</p>
-        <p class="contact">联系方式：{{ hidePhone(item.contact) }}</p>
-      </div>
+      <TransitionGroup name="list" tag="div" class="buddy-list">
+        <div class="buddy-card" v-for="item in buddyList" :key="item.id" @click="showDetail(item)">
+          <h3>{{ item.title }}</h3>
+          <p>分类：{{ item.category }}</p>
+          <p>时间：{{ item.time }}</p>
+          <p class="contact">联系方式：{{ hidePhone(item.contact) }}</p>
+        </div>
+      </TransitionGroup>
     </div>
 
     <!-- 3. 详情页 -->
@@ -361,6 +363,17 @@ h1 {
 
 .error-border { border: 2px solid #ff4757 !important; }
 .error-msg { color: #ff4757; font-size: 12px; margin-top: -8px; margin-bottom: 10px; }
+
+/* TransitionGroup 动画 */
+/* 刚进入和离开时的状态 */
+.list-enter-from, .list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+/* 整个动起来的过程 */
+.list-enter-active, .list-leave-active {
+  transition: all 0.5s ease;
+}
 
 /* 搭子卡片 */
 .buddy-card {
