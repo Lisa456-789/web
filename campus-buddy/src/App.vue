@@ -28,7 +28,7 @@
 
       <!-- 搜索框 -->
       <div class="search-box">
-        <input type="text" v-model="searchText" placeholder="搜索搭子标题..." @input="searchBuddy">
+        <input type="text" v-model="searchText" placeholder="搜索搭子标题...">
       </div>
 
       <!-- 筛选按钮 -->
@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 
 // === 登录相关 ===
@@ -157,15 +157,17 @@ const filterCategory = async (cat) => {
   }
 }
 
-// 4. 搜索功能
+// 4. 实时搜索功能
 const searchText = ref('')
 
-const searchBuddy = async () => {
-  const res = await axios.get('http://localhost:3000/api/buddies')
-  buddyList.value = res.data.filter(item =>
-    item.title.includes(searchText.value)
-  )
-}
+// 监听 searchText 变量的变化
+watch(searchText, async (newValue) => {
+  console.log('正在搜索：', newValue)
+
+  // 调用后端那个"有漏洞"的搜索接口
+  const res = await axios.get(`http://localhost:3000/api/search?q=${newValue}`)
+  buddyList.value = res.data
+})
 
 // 5. 新增搭子表单
 const newBuddy = ref({
