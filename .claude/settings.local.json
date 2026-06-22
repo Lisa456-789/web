@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p /Users/wangmingyu/Documents/编程/web/campus-buddy/server)",
+      "Bash(timeout 3 node server/server.cjs)",
+      "Bash(node server/server.cjs)",
+      "Bash(curl -s http://localhost:3000/api/buddies)",
+      "Bash(kill %1)",
+      "Bash(curl -s -X POST http://localhost:3000/api/buddies -H \"Content-Type: application/json\" -d '{\"title\":\"测试搭子\",\"category\":\"运动\",\"contact\":\"13900000000\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(curl -s -X OPTIONS http://localhost:3000/api/buddies -H \"Origin: http://localhost:5173\" -H \"Access-Control-Request-Method: GET\" -I)"
+    ],
+    "additionalDirectories": [
+      "/Users/wangmingyu/Documents/编程/web/campus-buddy"
     ]
   }
 }

@@ -19,6 +19,13 @@
 
       <h1>校园万能搭子广场</h1>
 
+      <!-- 实时仪表盘 -->
+      <div class="stats-bar">
+        <span>📊 全校动态：总数 {{ stats.total }}</span> |
+        <span>📚 学习 {{ stats.studyCount }}</span> |
+        <span>⚽ 运动 {{ stats.sportCount }}</span>
+      </div>
+
       <!-- 搜索框 -->
       <div class="search-box">
         <input type="text" v-model="searchText" placeholder="搜索搭子标题..." @input="searchBuddy">
@@ -78,7 +85,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import axios from 'axios'
 
 // === 登录相关 ===
 const currentPage = ref('login')
@@ -120,30 +128,41 @@ const handleLogout = () => {
 }
 
 // === 数据 ===
-// 1. 原始数据（creatorId 代表是谁发的）
-const allBuddies = [
-  { id: 1, title: '东操场打篮球', category: '运动', time: '周五 16:00', contact: '13812345678', creatorId: 101 },
-  { id: 2, title: '食堂二楼干饭', category: '美食', time: '今天中午', contact: '13988887777', creatorId: 100 },
-  { id: 3, title: '图书馆五楼自习', category: '学习', time: '周六全天', contact: '13566665555', creatorId: 101 }
-]
+const buddyList = ref([]) // 初始为空
 
-// 2. 正在显示的数据（默认是全部）
-const buddyList = ref([...allBuddies])
+// 页面一加载就去服务器拿数据
+onMounted(async () => {
+  const res = await axios.get('http://localhost:3000/api/buddies')
+  buddyList.value = res.data
+})
+
+// === 实时仪表盘（computed） ===
+// 只要 buddyList 变化，stats 就会自动重新计算
+const stats = computed(() => {
+  return {
+    total: buddyList.value.length,
+    studyCount: buddyList.value.filter(b => b.category === '学习').length,
+    sportCount: buddyList.value.filter(b => b.category === '运动').length
+  }
+})
 
 // 3. 筛选功能
-const filterCategory = (cat) => {
+const filterCategory = async (cat) => {
   if (cat === '全部') {
-    buddyList.value = [...allBuddies]
+    const res = await axios.get('http://localhost:3000/api/buddies')
+    buddyList.value = res.data
   } else {
-    buddyList.value = allBuddies.filter(item => item.category === cat)
+    const res = await axios.get('http://localhost:3000/api/buddies')
+    buddyList.value = res.data.filter(item => item.category === cat)
   }
 }
 
 // 4. 搜索功能
 const searchText = ref('')
 
-const searchBuddy = () => {
-  buddyList.value = allBuddies.filter(item =>
+const searchBuddy = async () => {
+  const res = await axios.get('http://localhost:3000/api/buddies')
+  buddyList.value = res.data.filter(item =>
     item.title.includes(searchText.value)
   )
 }
@@ -155,29 +174,19 @@ const newBuddy = ref({
   contact: ''
 })
 
-const addBuddy = () => {
-  if (!confirm('确定发布这条邀请吗？')) return
+const addBuddy = async () => {
+  if (newBuddy.value.title === '') return
 
-  if (newBuddy.value.title.trim() === '') {
-    alert('请输入标题！')
-    return
-  }
+  // 1. 发给后端保存
+  await axios.post('http://localhost:3000/api/buddies', newBuddy.value)
 
-  const buddy = {
-    id: Date.now(),
-    title: newBuddy.value.title,
-    category: newBuddy.value.category,
-    time: '刚刚发布',
-    contact: newBuddy.value.contact,
-    creatorId: currentUser.value.id
-  }
-
-  buddyList.value.unshift(buddy)
-  allBuddies.unshift(buddy)
+  // 2. 成功后重新刷新页面数据
+  const updated = await axios.get('http://localhost:3000/api/buddies')
+  buddyList.value = updated.data
 
   newBuddy.value.title = ''
   newBuddy.value.contact = ''
-  alert('发布成功！')
+  alert('已永久存入数据库！')
 }
 
 // 6. 页面切换
@@ -200,9 +209,7 @@ const joinBuddy = () => {
 // 8. 删除功能
 const deleteBuddy = () => {
   if (confirm('确定要删除这个搭子邀请吗？')) {
-    const index = allBuddies.findIndex(b => b.id === currentBuddy.value.id)
-    allBuddies.splice(index, 1)
-    buddyList.value = [...allBuddies]
+    buddyList.value = buddyList.value.filter(b => b.id !== currentBuddy.value.id)
     goBack()
   }
 }
@@ -241,6 +248,18 @@ checkAuth()
 h1 {
   text-align: center;
   color: #333;
+}
+
+/* 实时仪表盘 */
+.stats-bar {
+  text-align: center;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #555;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* 登录页 */
