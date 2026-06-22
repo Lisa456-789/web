@@ -156,6 +156,8 @@ const newBuddy = ref({
 })
 
 const addBuddy = () => {
+  if (!confirm('确定发布这条邀请吗？')) return
+
   if (newBuddy.value.title.trim() === '') {
     alert('请输入标题！')
     return
