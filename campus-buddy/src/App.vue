@@ -98,123 +98,64 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
-import axios from 'axios'
+import { ref, onMounted } from 'vue'
+import { useBuddy } from './composables/useBuddy'
+
+// === 引入组合式函数：搭子相关逻辑 ===
+const {
+  buddyList,
+  fetchBuddies,
+  stats,
+  filterCategory,
+  searchText,
+  newBuddy,
+  isContactInvalid,
+  addBuddy,
+  clearDatabase,
+  deleteBuddy: doDeleteBuddy,
+  hidePhone
+} = useBuddy()
 
 // === 登录相关 ===
 const currentPage = ref('login')
-const currentUser = ref(null) // 真正的用户信息（默认为空）
+const currentUser = ref(null)
 
-// 用来记录用户在登录框输入的账号密码
 const loginForm = ref({
   username: '',
   password: ''
 })
 
-const isLock = ref(false) // 是否被锁住
+const isLock = ref(false)
 
 const handleLogin = () => {
-  if (isLock.value) return // 如果锁住了，点击无效
+  if (isLock.value) return
 
-  // 模拟账号密码匹配
   if (loginForm.value.username === '100' && loginForm.value.password === '123456') {
     const userData = { id: 100, name: '小明' }
     currentUser.value = userData
-
-    // 存入浏览器，名字叫 'my_app_user'
     localStorage.setItem('my_app_user', JSON.stringify(userData))
-
-    currentPage.value = 'list' // 登录成功，跳到列表页
+    currentPage.value = 'list'
   } else {
     alert('密码错误！为了安全，请等待3秒后再试')
-    isLock.value = true // 锁住按钮
+    isLock.value = true
     setTimeout(() => {
-      isLock.value = false // 3秒后解锁
+      isLock.value = false
     }, 3000)
   }
 }
 
 const handleLogout = () => {
   currentUser.value = null
-  currentPage.value = 'login' // 退出后跳回登录页
-  localStorage.removeItem('my_app_user') // 清除记忆
+  currentPage.value = 'login'
+  localStorage.removeItem('my_app_user')
 }
 
-// === 数据 ===
-const buddyList = ref([]) // 初始为空
-
-// 页面一加载就去服务器拿数据
-onMounted(async () => {
-  const res = await axios.get('http://localhost:3000/api/buddies')
-  buddyList.value = res.data
+// === 页面一加载就去服务器拿数据 ===
+onMounted(() => {
+  fetchBuddies()
 })
 
-// === 实时仪表盘（computed） ===
-// 只要 buddyList 变化，stats 就会自动重新计算
-const stats = computed(() => {
-  return {
-    total: buddyList.value.length,
-    studyCount: buddyList.value.filter(b => b.category === '学习').length,
-    sportCount: buddyList.value.filter(b => b.category === '运动').length
-  }
-})
-
-// 3. 筛选功能
-const filterCategory = async (cat) => {
-  if (cat === '全部') {
-    const res = await axios.get('http://localhost:3000/api/buddies')
-    buddyList.value = res.data
-  } else {
-    const res = await axios.get('http://localhost:3000/api/buddies')
-    buddyList.value = res.data.filter(item => item.category === cat)
-  }
-}
-
-// 4. 实时搜索功能（带防抖）
-const searchText = ref('')
-
-let timer = null
-watch(searchText, (newValue) => {
-  // 只要还在打字，就清除上一次的定时器
-  clearTimeout(timer)
-
-  // 等用户停手 500 毫秒后，再发请求
-  timer = setTimeout(async () => {
-    const res = await axios.get(`http://localhost:3000/api/search?q=${newValue}`)
-    buddyList.value = res.data
-  }, 500)
-})
-
-// 5. 新增搭子表单
-const newBuddy = ref({
-  title: '',
-  category: '运动',
-  contact: ''
-})
-
-// 判断手机号是否合法（简单的长度判断）
-const isContactInvalid = computed(() => {
-  const contact = newBuddy.value.contact
-  // 如果写了内容但不是 11 位，就认为是非法的
-  return contact.length > 0 && contact.length !== 11
-})
-
-const addBuddy = async () => {
-  if (newBuddy.value.title === '') return
-
-  // 1. 发给后端保存
-  await axios.post('http://localhost:3000/api/buddies', newBuddy.value)
-
-  // 2. 成功后重新刷新页面数据
-  const updated = await axios.get('http://localhost:3000/api/buddies')
-  buddyList.value = updated.data
-
-  newBuddy.value.title = ''
-  newBuddy.value.contact = ''
-  alert('已永久存入数据库！')
-}
-
-// 6. 页面切换
+// === 页面切换 ===
 const currentBuddy = ref(null)
 
 const showDetail = (item) => {
@@ -226,48 +167,29 @@ const goBack = () => {
   currentPage.value = 'list'
 }
 
-// 7. 互动功能
+// === 互动功能 ===
 const joinBuddy = () => {
   alert('申请已发送！请等待发起人联系你~')
 }
 
-// 8. 清空数据库（系统维护）
-const clearDatabase = async () => {
-  if (!confirm('⚠️ 确定要清空全部数据吗？此操作不可恢复！')) return
-  await axios.delete('http://localhost:3000/api/clear')
-  const updated = await axios.get('http://localhost:3000/api/buddies')
-  buddyList.value = updated.data
-  alert('数据库已清空！')
-}
-
-// 9. 删除功能
+// === 删除功能（调用 composable 中的方法）===
 const deleteBuddy = () => {
-  if (confirm('确定要删除这个搭子邀请吗？')) {
-    buddyList.value = buddyList.value.filter(b => b.id !== currentBuddy.value.id)
-    goBack()
-  }
-}
-
-// 隐私脱敏
-const hidePhone = (phone) => {
-  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+  doDeleteBuddy(currentBuddy.value, goBack)
 }
 
 // === 页面启动时的"保安"检查 ===
 const checkAuth = () => {
   const savedUser = localStorage.getItem('my_app_user')
   if (!savedUser && currentPage.value !== 'login') {
-    // 如果没登录 且 不在登录页，强制回登录页
     currentPage.value = 'login'
     alert('请先登录！')
   }
   if (savedUser) {
     currentUser.value = JSON.parse(savedUser)
-    currentPage.value = 'list' // 直接进列表，不用再登录
+    currentPage.value = 'list'
   }
 }
 
-// 执行检查
 checkAuth()
 </script>
 

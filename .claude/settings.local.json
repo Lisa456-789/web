@@ -96,10 +96,12 @@
       "Bash(time curl -s --max-time 10 -w '\\\\nTime: %{time_total}s\\\\n' -X POST http://dandancloud.top/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"mayisuix\",\"password\":\"wrong\"}')",
       "Bash(curl -s --max-time 10 http://dandancloud.top/api/auth/reset-password)",
       "Bash(curl -s --max-time 10 -X POST http://dandancloud.top/api/auth/forgot-password -H 'Content-Type: application/json' -d '{\"email\":\"1509344041@qq.com\"}')",
-      "Bash(curl -s --max-time 10 http://dandancloud.top/api/portal)"
+      "Bash(curl -s --max-time 10 http://dandancloud.top/api/portal)",
+      "Bash(mkdir -p /Users/wangmingyu/Documents/编程/web/campus-buddy/src/composables)"
     ],
     "additionalDirectories": [
-      "/Users/wangmingyu/Documents/编程/web/campus-buddy"
+      "/Users/wangmingyu/Documents/编程/web/campus-buddy",
+      "/Users/wangmingyu/Documents/编程/web/campus-buddy/src"
     ]
   }
 }
