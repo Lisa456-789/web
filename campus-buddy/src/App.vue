@@ -90,7 +90,11 @@ const loginForm = ref({
   password: ''
 })
 
+const isLock = ref(false) // 是否被锁住
+
 const handleLogin = () => {
+  if (isLock.value) return // 如果锁住了，点击无效
+
   // 模拟账号密码匹配
   if (loginForm.value.username === '100' && loginForm.value.password === '123456') {
     const userData = { id: 100, name: '小明' }
@@ -101,7 +105,11 @@ const handleLogin = () => {
 
     currentPage.value = 'list' // 登录成功，跳到列表页
   } else {
-    alert('账号或密码错误！')
+    alert('密码错误！为了安全，请等待3秒后再试')
+    isLock.value = true // 锁住按钮
+    setTimeout(() => {
+      isLock.value = false // 3秒后解锁
+    }, 3000)
   }
 }
 
